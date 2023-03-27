@@ -49,6 +49,7 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
 
 ### 5. Convert the JFMP shapefiles to 180m grid data - The fast way
 > Note: ensure that these datasets are projected to VicGrid94 prior to carrying out these steps:
+> Note: You can run shp2pgsql without installing PostGIS by downloading the latest zip bundle from http://download.osgeo.org/postgis/windows/ and extracting just the /bin/ folder.
    1. Prepare Spatial SQL versions of the JFMP source datasets using the `shp2pgsql` command. 
 
       ```bash
