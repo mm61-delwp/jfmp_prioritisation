@@ -12,7 +12,7 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
  * treatment_  - coded id of the burn, including district and type
  * category    - type of burn
  * jfmpyrpr    - proposed year/season of treatment (as single 4 digit numeric year)
- > Note: Capitalisation shouldn't matter (but I had better check this!)
+  > Note: Capitalisation shouldn't matter (but I had better check this!)
 
 ### 3. Clip shapefile to latest treatability layer
  > Note: we really should store treatability in Athena and skip this step
