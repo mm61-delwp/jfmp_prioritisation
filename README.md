@@ -35,12 +35,22 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
         state = 'Victoria'
       ```
 
-   2. Join JFMP to 180m grid
-   3. Export to shapefile
-   4. Import shapefile to risk2temp database
-      
+   2. Join JFMP to 180m grid and export to a shapefile
 
+      Select grid cells within JFMP polygons
       
+      ```arcpy.management.SelectLayerByLocation("180m_grid", "WITHIN", "JFMP_Draft", None, "NEW_SELECTION", "NOT_INVERT")```
+      
+      Use Spatial Join to add the JFMP details to selected grid cells
+      
+      ```arcpy.management.```
+      
+      Export features
+      
+      ```arcpy.management. ```
+   
+   3. Import shapefile to risk2temp database
+
       Upload the shapefile using PostGIS Shapefile Import/Export manager
       <img src="https://user-images.githubusercontent.com/100050237/227848065-9e6c8ea4-d36b-4bf6-8c80-e75c971c4e9c.png" width="500" />
       > Note: You can run this tool without installing PostGIS by downloading the latest zip bundle from http://download.osgeo.org/postgis/windows/ and extracting just the /bin/ folder.
