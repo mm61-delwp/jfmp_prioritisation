@@ -121,7 +121,7 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
       CREATE SCHEMA jfmp_2022_test;
       ```
    
-   2. Import shapefile to risk2temp database
+   2. Import JFMP shapefile to risk2temp database
 
       Upload the shapefile using PostGIS Shapefile Import/Export manager
       <img src="https://user-images.githubusercontent.com/100050237/227848065-9e6c8ea4-d36b-4bf6-8c80-e75c971c4e9c.png" width="500" />
@@ -136,7 +136,7 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
               b.name,
               b.treatment_ as burnnum,
               b.JFMPYEARpr as jfmp_year,
-	      b.CATEGORY as category,
+              b.CATEGORY as category,
               a.delwp_district,
               a.delwp_region,
               a.treatable,
