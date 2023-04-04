@@ -130,7 +130,7 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
    3. Join JFMP shapefile to 180m grid cells
       
       ```sql
-      CREATE TABLE jfmp_2022_test.jfmp_treatable_xy180 AS
+      CREATE TABLE jfmp_2022_test.jfmp_xy180 AS
           SELECT
               a.cellid,
               b.name,
@@ -151,6 +151,19 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
               b.T_TYPE_FMS in ('FUEL REDUCTION', ECOLOGICAL)
       ;
       ```
+
+ 
+### 5. Process Phoenix data in AWS Athena
+
+   1. Create a new schema in Athena to hold/store our data
+      
+      ```sql
+      CREATE SCHEMA jfmp_2022_test;
+      ```
+      
+   2. Export jfmp_xy180 table from risk2temp to Athena database
+
+   3. Calculate year1 burn scores
 
 ```sql
 create table jfmp_20_21.scored_burns_year1 as (
