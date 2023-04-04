@@ -201,65 +201,59 @@ create table jfmp_20_21.scored_burns_year1 as (
     -- calculate the difference in losses between the year 1 JFMP impacts and the year 1 "no JFMP" impacts
     -- on a per-ignition basis; thus calculating the loss reduction effect of the JFMP
     loss_diff as (
-		select a.ignitionid, b.no_jfmp_tot_calc_loss, a.jfmp_tot_calc_loss, (b.no_jfmp_tot_calc_loss - a.jfmp_tot_calc_loss) as loss_diff
-		from ignition_houseloss_JFMP as a
-		left join ignition_houseloss_no_JFMP as b
-		on a.ignitionid =  b.ignitionid
-	),
+	select a.ignitionid, b.no_jfmp_tot_calc_loss, a.jfmp_tot_calc_loss, (b.no_jfmp_tot_calc_loss - a.jfmp_tot_calc_loss) as loss_diff
+	from ignition_houseloss_JFMP as a
+	left join ignition_houseloss_no_JFMP as b
+	on a.ignitionid =  b.ignitionid
+    ),
 
-	-- count the number of cells that were burnt in each jfmp polygon for each ignition
+    -- count the number of cells that were burnt in each jfmp polygon for each ignition
     burn_num_cells as (
-		select ignitionid, name, burnnum, category, jfmp_year, count(*) as num_cells
-		from jfmp_treatable_xy180
-		where jfmp_year in jfmp_year(year1)
+	select ignitionid, name, burnnum, category, jfmp_year, count(*) as num_cells
+	from jfmp_treatable_xy180
+	where jfmp_year in jfmp_year(year1)
         and coalesce(intensity, 0) > 0
-		group by ignitionid, name, burnnum, category
-	),
+	group by ignitionid, name, burnnum, category
+    ),
+    
     -- count the total number of cells that were burnt by each ignition
     bushfire_num_cells as (
         select ignitionid, count(*) as num_cells
-		from relevant_bushfire_footprints
-		where jfmp_year in jfmp_year(year1)
+	from relevant_bushfire_footprints
+	where jfmp_year in jfmp_year(year1)
         and coalesce(intensity, 0) > 0
-		group by ignitionid
-    )
+	group by ignitionid
+     ),
 
-	weighted_burns as (
-		select  b.name, b.burnnum, b.category, b.jfmp_year, b.ignitionid_jfmp as ignitionid,
-		 b.num_cells, l.loss_diff, (b.num_cells::numeric / bnc.num_cells::numeric) * l.loss_diff as score
-		from num_cells_jfmp_treatable as b
-			join burn_num_cells as bnc on b.name = bnc.name and b.burnnum = bnc.burnnum and b.category = bnc.category, jfmp_year = bnc.jfmp_year
-			join loss_diff as l on b.ignitionid_jfmp = l.ignitionid
-		order by score desc
-
-		select  b.ignitionid, b.name, b.burnnum, b.category, b.jfmp_year, b.num_cells,
-                l.loss_diff, (b.num_cells::numeric / bnc.num_cells::numeric) * l.loss_diff as score
-        from
+    weighted_burns as (
+    	select  b.ignitionid, b.name, b.burnnum, b.category, b.jfmp_year, b.num_cells,
+            l.loss_diff, (b.num_cells::numeric / bnc.num_cells::numeric) * l.loss_diff as score
+    	from
             burn_num_cells as b
             join bushfire_num_cells as f on f.ignitionid = b.ignitionid
             join loss_diff as l on b.ignitionid_jfmp = l.ignitionid
         order by score desc
-		),
+    ),
 
-	scored_burns as (
-		select name, burnnum, category, jfmp_year, sum(score) as score
-		from weighted_burns
-		group by name, burnnum, category, jfmp_year
-	),
-	max_score as (
-		select max(score) as max_score
-		from scored_burns
-	),
-	norm_scored_burns as (
-		select name, burnnum, category, jfmp_year, round((s.score/max_score.max_score*100),1) as normalised_score, s.score as raw_score
-		from scored_burns as s, max_score
-	)
+    scored_burns as (
+	select name, burnnum, category, jfmp_year, sum(score) as score
+	from weighted_burns
+	group by name, burnnum, category, jfmp_year
+    ),
+    max_score as (
+	select max(score) as max_score
+	from scored_burns
+    ),
+    norm_scored_burns as (
+	select name, burnnum, category, jfmp_year, round((s.score/max_score.max_score*100),1) as normalised_score, s.score as raw_score
+	from scored_burns as s, max_score
+    )
     UP TO HERE!!!
-	select  n.normalised_score,
-            n.raw_score, n.gid,
-            b.name, b.burnnum
-	from norm_scored_burns as n
-		join jfmp_treatable_grouped as b
-		on n.gid= b.gid
-	order by n.normalised_score desc
- '''
+select  n.normalised_score,
+    n.raw_score, n.gid,
+    b.name, b.burnnum
+from norm_scored_burns as n
+    join jfmp_treatable_grouped as b
+    on n.gid= b.gid
+order by n.normalised_score desc
+'''
