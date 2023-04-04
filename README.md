@@ -112,4 +112,41 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
 			         on a.delwp_district = c.dstrctname
          );
       ```
-6. Export
+   
+### 5. Convert the JFMP shapefiles to 180m grid data - The new way
+
+   1. Create a new schema in risk2temp_db to hold/store our data
+      
+      ```sql
+      CREATE SCHEMA jfmp_2022_test;
+      ```
+   
+   2. Import shapefile to risk2temp database
+
+      Upload the shapefile using PostGIS Shapefile Import/Export manager
+      <img src="https://user-images.githubusercontent.com/100050237/227848065-9e6c8ea4-d36b-4bf6-8c80-e75c971c4e9c.png" width="500" />
+         > Note: You can run this tool without installing PostGIS by downloading the latest zip bundle from http://download.osgeo.org/postgis/windows/ and extracting just the /bin/ folder.
+   
+   3. Join JFMP shapefile to 180m grid cells
+      
+      ```sql
+      CREATE TABLE jfmp_2022_test.jfmp_treatable_xy180 AS
+          SELECT
+              a.cellid,
+              b.name,
+              b.treatment_ as burnnum,
+              b.JFMPYEARpr as jfmp_year,
+              a.delwp_district,
+              a.delwp_region,
+              a.treatable,
+              a.geom_polygon
+          FROM
+              reference_brau.grid_cell_180m_treatability as a
+          INNER JOIN
+              jfmp_2022_test. as b
+          ON 
+              ST_Within(a.geom_point, b.geom)
+          WHERE 
+              b.T_TYPE_FMS in ('FUEL REDUCTION', ECOLOGICAL)
+      ;
+      ```
