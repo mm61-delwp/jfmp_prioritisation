@@ -136,6 +136,7 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
               b.name,
               b.treatment_ as burnnum,
               b.JFMPYEARpr as jfmp_year,
+	      b.CATEGORY as category,
               a.delwp_district,
               a.delwp_region,
               a.treatable,
@@ -155,7 +156,7 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
 create table jfmp_20_21.scored_burns_year1 as (
 
     -- Only update the input tables below; everything else will reference these
-    jfmp_year            as (select 2023 as year1, 2024 as year2, 2025 as year3),                       -- translate jfmp_year to year1/2/3
+    with jfmp_year       as (select 2023 as year1, 2024 as year2, 2025 as year3),                       -- translate jfmp_year to year1/2/3
     ignition_grid        as select * from reference_brau.grid_ignition_5km_2016,                        -- ignition grid
     impact_y1_jfmp       as select * from statewide_runs.ignition_jfmp_2020_21_target_130_5km_impact,   -- year1 jfmp impact table
     impact_y1_nojfmp     as select * from statewide_runs.ignition_jfmp_2020_2021_nothing_130_5km_impact,-- year 1 nojfmp impact table
@@ -225,6 +226,7 @@ create table jfmp_20_21.scored_burns_year1 as (
 	group by ignitionid
      ),
 
+    -- allocate scores to ignition/burn combination
     weighted_burns as (
     	select  b.ignitionid, b.name, b.burnnum, b.category, b.jfmp_year, b.num_cells,
             l.loss_diff, (b.num_cells::numeric / bnc.num_cells::numeric) * l.loss_diff as score
@@ -235,25 +237,30 @@ create table jfmp_20_21.scored_burns_year1 as (
         order by score desc
     ),
 
+    -- sum scores back to burns
     scored_burns as (
 	select name, burnnum, category, jfmp_year, sum(score) as score
 	from weighted_burns
 	group by name, burnnum, category, jfmp_year
     ),
+    
+    -- calculate the highest score across all burns
     max_score as (
 	select max(score) as max_score
 	from scored_burns
-    ),
-    norm_scored_burns as (
-	select name, burnnum, category, jfmp_year, round((s.score/max_score.max_score*100),1) as normalised_score, s.score as raw_score
-	from scored_burns as s, max_score
     )
-    UP TO HERE!!!
-select  n.normalised_score,
-    n.raw_score, n.gid,
-    b.name, b.burnnum
-from norm_scored_burns as n
-    join jfmp_treatable_grouped as b
-    on n.gid= b.gid
-order by n.normalised_score desc
+    
+   
+select 
+    name,
+    burnnum, 
+    category, 
+    jfmp_year, 
+    round((s.score/max_score.max_score*100),1) as normalised_score, 
+    s.score as raw_score
+from 
+    scored_burns as s, 
+    max_score
+order by 
+    n.normalised_score desc
 '''
