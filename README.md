@@ -257,27 +257,17 @@ order by burn_score_normalised desc
    9. Make Phoenix burn score summary view
 
 ```sql
-create view burn_score_bn as
+create view burn_score_phx as
 with 
-    weighted_burns as (
-        select ignitionid, name, burnnum, jfmp_year, 
-            sum(burn_cells) as burn_cells, 
-            sum(ignition_cells) as ignition_cells,
-            cast(sum(burn_cells) as real)/cast(sum(ignition_cells) as real) as burn_weight
-        from weighted_burns
-        group by ignitionid, name, burnnum, jfmp_year
-        order by
-    ),
-    
     burn_scores as (
         select b.name, b.burnnum, b.jfmp_year,
-            sum(b.burn_weight * coalesce(hl.loss_diff_bn,0)) as burn_score_bn
+            sum(b.burn_weight * coalesce(hl.loss_diff,0)) as burn_score_phx
         from weighted_burns b
-        left join ignition_houseloss_bn hl on hl.ignitionid = b.ignitionid
+        left join ignition_houseloss_phx hl on hl.ignitionid = b.ignitionid
         group by b.name, b.burnnum, b.jfmp_year
     ),
     max_score as (
-        select min(burn_score_bn) as max_burn_score_bn from burn_scores -- !! Note: burn scores are change values; negative is a reduction in house loss !!
+        select min(burn_score_phx) as max_burn_score_phx from burn_scores -- !! Note: burn scores are change values; negative is a reduction in house loss !!
     )
 (select 
     b.name, b.burnnum, b.jfmp_year,
