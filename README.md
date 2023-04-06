@@ -276,6 +276,7 @@ with
 from burn_scores b, max_score m
 order by burn_score_normalised desc
 );
+```
 
    10. Combine burn score tables
 
