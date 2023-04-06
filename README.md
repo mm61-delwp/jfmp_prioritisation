@@ -166,7 +166,7 @@ create view test_jfmp_2022.impact_y1_nojfmp as (
     );
 ```
 
-   4. Combine all 10 fulljfmp ignition impact tables into a single view
+   5. Combine all 10 fulljfmp ignition impact tables into a single view
 
 ```sql
 -- combine all 10 fulljfmp ignition impact tables into a single view
@@ -184,8 +184,9 @@ create view test_jfmp_2022.impact_y1_fulljfmp as (
     );
 ```
 
-   4. Calculate the difference in loss values between nojfmp and fulljfmp from ignition_impact tables
+   6. Calculate the difference in loss values between nojfmp and fulljfmp from ignition_impact tables
 
+```sql
 create view test_jfmp_2022.ignition_houseloss_phx as (
     select nojfmp.ignitionid, nojfmp.weather,
         coalesce(nojfmp.sum_loss_all_int, 0) as nojfmp_tot_calc_loss,
@@ -193,4 +194,62 @@ create view test_jfmp_2022.ignition_houseloss_phx as (
         coalesce(jfmp.sum_loss_all_int, 0) - coalesce(nojfmp.sum_loss_all_int, 0) as loss_diff
     from impact_y1_nojfmp nojfmp
     left join impact_y1_fulljfmp jfmp on jfmp.ignitionid = nojfmp.ignitionid and jfmp.weather = nojfmp.weather
+    );
+```
+
+   7. Calculate the difference in loss values between nojfmp and fulljfmp from bayes net tables
+
+```sql
+create view test_jfmp_2022.ignition_houseloss_bn as 
+  with 
+    bn_y1_nojfmp as (select * from bn_jfmp_2023_2022fh_2km_nojfmp_047883390e9245e9acf81230f193dca0.bn_ignition_summary),
+    bn_y1_fulljfmp as (select * from bn_jfmp_2023_2022fh_2km_fulljfmp_4814dab5877a422c8314724550fc508a.bn_ignition_summary)
+
+  (select nojfmp.ignition_id as ignitionid,
+        coalesce(nojfmp.phoenix_houseloss, 0) as nojfmp_tot_calc_loss_phx,
+        coalesce(jfmp.phoenix_houseloss, 0) as jfmp_tot_calc_loss_phx,
+        coalesce(nojfmp.houseloss_mean_res, 0) as nojfmp_tot_calc_loss_bn,
+        coalesce(jfmp.houseloss_mean_res, 0) as jfmp_tot_calc_loss_bn,
+        coalesce(nojfmp.phoenix_houseloss, 0) - coalesce(jfmp.phoenix_houseloss, 0) as loss_diff_phx,
+        coalesce(jfmp.houseloss_mean_res, 0) - coalesce(nojfmp.houseloss_mean_res, 0) as loss_diff_bn
+    from bn_y1_nojfmp nojfmp
+    left join bn_y1_fulljfmp jfmp on jfmp.ignition_id = nojfmp.ignition_id 
+    );
+```
+
+   8. Make bayes net burn score summary view
+    
+```sql
+create view burn_score_bn as
+with 
+    weighted_burns as (
+        select 
+            ignitionid, name, burnnum, jfmp_year, 
+            sum(burn_cells) as burn_cells, 
+            sum(ignition_cells) as ignition_cells,
+            cast(sum(burn_cells) as real)/cast(sum(ignition_cells) as real) as burn_weight
+        from weighted_burns
+        group by ignitionid, name, burnnum, jfmp_year
+    ),
+    
+    burn_scores as (
+        select
+            b.name, b.burnnum, b.jfmp_year,
+            sum(b.burn_weight * coalesce(hl.loss_diff_bn,0)) as burn_score_bn
+        from weighted_burns b
+        left join ignition_houseloss_bn hl on hl.ignitionid = b.ignitionid
+        group by b.name, b.burnnum, b.jfmp_year
+    ),
+    
+    max_score as (
+        select min(burn_score_bn) as max_burn_score_bn from burn_scores -- !! Note: burn scores are change values; negative is a reduction in house loss !!
     )
+
+(select 
+    b.name, b.burnnum, b.jfmp_year,
+    b.burn_score_bn as burn_score_raw,
+    cast(b.burn_score_bn as real)/cast(m.max_burn_score_bn as real) as burn_score_normalised
+from burn_scores b, max_score m
+order by burn_score_normalised desc
+);
+```
