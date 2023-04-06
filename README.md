@@ -276,3 +276,13 @@ with
 from burn_scores b, max_score m
 order by burn_score_normalised desc
 );
+
+   10. Combine burn score tables
+
+```sql
+create view burn_score_combined as(
+    select  a.name, a.burnnum, a.jfmp_year, a.burn_score_raw as score_raw_phx, b.burn_score_raw as score_raw_bn,
+            a.burn_score_normalised as score_norm_phx, b.burn_score_normalised as score_norm_bn
+    from burn_score_phx a left join burn_score_bn b on a.name = b.name and a.burnnum = b.burnnum and a.jfmp_year = b.jfmp_year
+    );
+```
