@@ -166,114 +166,133 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
    3. Calculate year1 burn scores
 
 ```sql
-create table jfmp_20_21.scored_burns_year1 as (
+-- summarise the intersections of the JFMP polygons and Phoenix fire areas;
+-- allocate burn weighting to each burn based on the number of intersecting treatable cells in the burn divided by the total number of treatable cells in all intersecting burns
+create table test_jfmp_2022.weighted_burns as 
+with 
+    jfmp_year as (select 2023 as year1, 2024 as year2, 2025 as year3),
+    allcells_y1_nojfmp_wx01 as (select * from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb1.cell),-- year 1 nojfmp allcells table wx01
+    allcells_y1_nojfmp_wx02 as (select * from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb2.cell),-- year 1 nojfmp allcells table wx02
+    allcells_y1_nojfmp_wx03 as (select * from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb3.cell),-- year 1 nojfmp allcells table wx03
+    allcells_y1_nojfmp_wx04 as (select * from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb4.cell),-- year 1 nojfmp allcells table wx04
+    allcells_y1_nojfmp_wx05 as (select * from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb5.cell),-- year 1 nojfmp allcells table wx05
+    allcells_y1_nojfmp_wx06 as (select * from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb6.cell),-- year 1 nojfmp allcells table wx06
+    allcells_y1_nojfmp_wx07 as (select * from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb7.cell),-- year 1 nojfmp allcells table wx07
+    allcells_y1_nojfmp_wx08 as (select * from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb8.cell),-- year 1 nojfmp allcells table wx08
+    allcells_y1_nojfmp_wx09 as (select * from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb9.cell),-- year 1 nojfmp allcells table wx09
+    allcells_y1_nojfmp_wx10 as (select * from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb10.cell),-- year 1 nojfmp allcells table wx10
 
-    -- Only update the input tables below; everything else will reference these
-    with jfmp_year       as (select 2023 as year1, 2024 as year2, 2025 as year3),                       -- translate jfmp_year to year1/2/3
-    ignition_grid        as select * from reference_brau.grid_ignition_5km_2016,                        -- ignition grid
-    impact_y1_jfmp       as select * from statewide_runs.ignition_jfmp_2020_21_target_130_5km_impact,   -- year1 jfmp impact table
-    impact_y1_nojfmp     as select * from statewide_runs.ignition_jfmp_2020_2021_nothing_130_5km_impact,-- year 1 nojfmp impact table
-    allcells_y1_nojfmp   as select * from jobid.cell                                                    -- year 1 nojfmp allcells table
-    jfmp_treatable_xy180 as select * from jfmp_2022_prioritisation.jfmp_treatable_xy180,
-    --jfmp_treatable_grouped as select * from   jfmp_20_21.jfmp_treatable_20200903_grouped,
-
-    -- find (for each burn in year 1 of the JFMP) all bushfire footprint cells that the burn interacts with.
-    relevant_bushfire_footprints as (
-        select a.*, b.ignitionid
-        from allcells_y1_nojfmp as a
-        left join jfmp_treatable_xy180 as b -- switched a and b !!!! CHECK THIS !!!!
-        on a.cellid = b.cellid
-        where jfmp_year in jfmp_year.year1
-        and coalesce(a.intensity, 0) > 0
+    burm_num_cells as (
+        select 'wx01' as weather, a.ignitionid, b.name, b.burnnum, b.jfmp_year, count (a.cellid) as num_burnt
+        from allcells_y1_nojfmp_wx01 as a inner join jfmp_xy180 as b on a.cellid = b.cellid inner join jfmp_year on b.jfmp_year = jfmp_year.year1
+        where coalesce (a.intensity, 0) > 0
+        group by a.ignitionid, b.name, b.burnnum, b.jfmp_year
+        union
+        select 'wx02' as weather, a.ignitionid, b.name, b.burnnum, b.jfmp_year, count (a.cellid) as num_burnt
+        from allcells_y1_nojfmp_wx02 as a inner join jfmp_xy180 as b on a.cellid = b.cellid inner join jfmp_year on b.jfmp_year = jfmp_year.year1
+        where coalesce (a.intensity, 0) > 0
+        group by a.ignitionid, b.name, b.burnnum, b.jfmp_year
+        union
+        select 'wx03' as weather, a.ignitionid, b.name, b.burnnum, b.jfmp_year, count (a.cellid) as num_burnt
+        from allcells_y1_nojfmp_wx03 as a inner join jfmp_xy180 as b on a.cellid = b.cellid inner join jfmp_year on b.jfmp_year = jfmp_year.year1
+        where coalesce (a.intensity, 0) > 0
+        group by a.ignitionid, b.name, b.burnnum, b.jfmp_year
+        union
+        select 'wx04' as weather, a.ignitionid, b.name, b.burnnum, b.jfmp_year, count (a.cellid) as num_burnt
+        from allcells_y1_nojfmp_wx04 as a inner join jfmp_xy180 as b on a.cellid = b.cellid inner join jfmp_year on b.jfmp_year = jfmp_year.year1
+        where coalesce (a.intensity, 0) > 0
+        group by a.ignitionid, b.name, b.burnnum, b.jfmp_year
+        union
+        select 'wx05' as weather, a.ignitionid, b.name, b.burnnum, b.jfmp_year, count (a.cellid) as num_burnt
+        from allcells_y1_nojfmp_wx05 as a inner join jfmp_xy180 as b on a.cellid = b.cellid inner join jfmp_year on b.jfmp_year = jfmp_year.year1
+        where coalesce (a.intensity, 0) > 0
+        group by a.ignitionid, b.name, b.burnnum, b.jfmp_year
+        union
+        select 'wx06' as weather, a.ignitionid, b.name, b.burnnum, b.jfmp_year, count (a.cellid) as num_burnt
+        from allcells_y1_nojfmp_wx06 as a inner join jfmp_xy180 as b on a.cellid = b.cellid inner join jfmp_year on b.jfmp_year = jfmp_year.year1
+        where coalesce (a.intensity, 0) > 0
+        group by a.ignitionid, b.name, b.burnnum, b.jfmp_year
+        union
+        select 'wx07' as weather, a.ignitionid, b.name, b.burnnum, b.jfmp_year, count (a.cellid) as num_burnt
+        from allcells_y1_nojfmp_wx07 as a inner join jfmp_xy180 as b on a.cellid = b.cellid inner join jfmp_year on b.jfmp_year = jfmp_year.year1
+        where coalesce (a.intensity, 0) > 0
+        group by a.ignitionid, b.name, b.burnnum, b.jfmp_year
+        union
+        select 'wx08' as weather, a.ignitionid, b.name, b.burnnum, b.jfmp_year, count (a.cellid) as num_burnt
+        from allcells_y1_nojfmp_wx08 as a inner join jfmp_xy180 as b on a.cellid = b.cellid inner join jfmp_year on b.jfmp_year = jfmp_year.year1
+        where coalesce (a.intensity, 0) > 0
+        group by a.ignitionid, b.name, b.burnnum, b.jfmp_year
+        union
+        select 'wx09' as weather, a.ignitionid, b.name, b.burnnum, b.jfmp_year, count (a.cellid) as num_burnt
+        from allcells_y1_nojfmp_wx09 as a inner join jfmp_xy180 as b on a.cellid = b.cellid inner join jfmp_year on b.jfmp_year = jfmp_year.year1
+        where coalesce (a.intensity, 0) > 0
+        group by a.ignitionid, b.name, b.burnnum, b.jfmp_year
+        union
+        select 'wx10' as weather, a.ignitionid, b.name, b.burnnum, b.jfmp_year, count (a.cellid) as num_burnt
+        from allcells_y1_nojfmp_wx10 as a inner join jfmp_xy180 as b on a.cellid = b.cellid inner join jfmp_year on b.jfmp_year = jfmp_year.year1
+        where coalesce (a.intensity, 0) > 0
+        group by a.ignitionid, b.name, b.burnnum, b.jfmp_year
     ),
-
-    -- for each burn, count the number of treatable cells that intersect each simulated bushfire
-    num_cells_jfmp_treatable as (
-        select name, burnnum, category, jfmp_year, count(cellid) as num_cells, ignitionid
-        from relevant_bushfire_footprints
-        where jfmp_year in jfmp_year.year1
-        and treatable = 1
-        group by name, burnnum, category, jfmp_year, ignitionid
-    ),
-
-    -- join the ignition summaries back to the full ignition grid, for the year 1 JFMP impact results
-    ignition_houseloss_JFMP as (
-	select a.ignitionid, coalesce(b.tot_calc_loss, 0) as jfmp_tot_calc_loss
-	from ignition_grid as a
-        left join impact_y1_jfmp as b
-        on a.ignitionid =  b.ignitionid
-    ),
-
-    -- join the ignition summaries back to the full ignition grid, for the year 1 "no JFMP" impact results
-    ignition_houseloss_no_JFMP as (
-	SELECT a.ignitionid, coalesce(b.tot_calc_loss, 0)  as no_jfmp_tot_calc_loss
-	from ignition_grid as a
-	left join impact_y1_nojfmp as b
-	on a.ignitionid =  b.ignitionid
-    ),
-
-    -- calculate the difference in losses between the year 1 JFMP impacts and the year 1 "no JFMP" impacts
-    -- on a per-ignition basis; thus calculating the loss reduction effect of the JFMP
-    loss_diff as (
-	select a.ignitionid, b.no_jfmp_tot_calc_loss, a.jfmp_tot_calc_loss, (b.no_jfmp_tot_calc_loss - a.jfmp_tot_calc_loss) as loss_diff
-	from ignition_houseloss_JFMP as a
-	left join ignition_houseloss_no_JFMP as b
-	on a.ignitionid =  b.ignitionid
-    ),
-
-    -- count the number of cells that were burnt in each jfmp polygon for each ignition
-    burn_num_cells as (
-	select ignitionid, name, burnnum, category, jfmp_year, count(*) as num_cells
-	from jfmp_treatable_xy180
-	where jfmp_year in jfmp_year(year1)
-        and coalesce(intensity, 0) > 0
-	group by ignitionid, name, burnnum, category
-    ),
-    
-    -- count the total number of cells that were burnt by each ignition
-    bushfire_num_cells as (
-        select ignitionid, count(*) as num_cells
-	from relevant_bushfire_footprints
-	where jfmp_year in jfmp_year(year1)
-        and coalesce(intensity, 0) > 0
-	group by ignitionid
-     ),
-
-    -- allocate scores to ignition/burn combination
-    weighted_burns as (
-    	select  b.ignitionid, b.name, b.burnnum, b.category, b.jfmp_year, b.num_cells,
-            l.loss_diff, (b.num_cells::numeric / bnc.num_cells::numeric) * l.loss_diff as score
-    	from
-            burn_num_cells as b
-            join bushfire_num_cells as f on f.ignitionid = b.ignitionid
-            join loss_diff as l on b.ignitionid_jfmp = l.ignitionid
-        order by score desc
-    ),
-
-    -- sum scores back to burns
-    scored_burns as (
-	select name, burnnum, category, jfmp_year, sum(score) as score
-	from weighted_burns
-	group by name, burnnum, category, jfmp_year
-    ),
-    
-    -- calculate the highest score across all burns
-    max_score as (
-	select max(score) as max_score
-	from scored_burns
+    ignition_num_cells as (
+        select weather, ignitionid, sum (num_burnt) as num_burnt
+        from burm_num_cells
+        group by weather, ignitionid
     )
-    
-   
-select 
-    name,
-    burnnum, 
-    category, 
-    jfmp_year, 
-    round((s.score/max_score.max_score*100),1) as normalised_score, 
-    s.score as raw_score
-from 
-    scored_burns as s, 
-    max_score
-order by 
-    n.normalised_score desc
-'''
+(select 
+    a.weather, a.ignitionid, a.name, a.burnnum, a.jfmp_year,
+    a.num_burnt as burn_cells,
+    b.num_burnt as ignition_cells,
+    a.num_burnt/b.num_burnt as burn_weight
+from burn_num_cells a left join ignition_num_cells b on a.ignitionid = b.ignitionid
+);
+```
+
+
+   4. Combine all 10 ignition nojfmp impact tables into a single view
+
+```sql
+-- combine all 10 ignition nojfmp impact tables into a single view
+create view test_jfmp_2022.impact_y1_nojfmp as (
+    select *,       'wx01' as weather from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb1.ignition_impact
+    union select *, 'wx02' as weather from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb2.ignition_impact
+    union select *, 'wx03' as weather from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb3.ignition_impact
+    union select *, 'wx04' as weather from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb4.ignition_impact
+    union select *, 'wx05' as weather from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb5.ignition_impact
+    union select *, 'wx06' as weather from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb6.ignition_impact
+    union select *, 'wx07' as weather from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb7.ignition_impact
+    union select *, 'wx08' as weather from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb8.ignition_impact
+    union select *, 'wx09' as weather from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb9.ignition_impact
+    union select *, 'wx10' as weather from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb10.ignition_impact
+    );
+```
+
+   4. Combine all 10 ignition fulljfmp impact tables into a single view
+
+```sql
+-- combine all 10 ignition fulljfmp impact tables into a single view
+create view test_jfmp_2022.impact_y1_fulljfmp as (
+    select *,       'wx01' as weather from jfmp_2023_2022fh_2km_fulljfmp_v2_ab8e3737f94c409195e27bfd791ccfeb1.ignition_impact
+    union select *, 'wx02' as weather from jfmp_2023_2022fh_2km_fulljfmp_v2_ab8e3737f94c409195e27bfd791ccfeb2.ignition_impact
+    union select *, 'wx03' as weather from jfmp_2023_2022fh_2km_fulljfmp_v2_ab8e3737f94c409195e27bfd791ccfeb3.ignition_impact
+    union select *, 'wx04' as weather from jfmp_2023_2022fh_2km_fulljfmp_v2_ab8e3737f94c409195e27bfd791ccfeb4.ignition_impact
+    union select *, 'wx05' as weather from jfmp_2023_2022fh_2km_fulljfmp_v2_ab8e3737f94c409195e27bfd791ccfeb5.ignition_impact
+    union select *, 'wx06' as weather from jfmp_2023_2022fh_2km_fulljfmp_v2_ab8e3737f94c409195e27bfd791ccfeb6.ignition_impact
+    union select *, 'wx07' as weather from jfmp_2023_2022fh_2km_fulljfmp_v2_ab8e3737f94c409195e27bfd791ccfeb7.ignition_impact
+    union select *, 'wx08' as weather from jfmp_2023_2022fh_2km_fulljfmp_v2_ab8e3737f94c409195e27bfd791ccfeb8.ignition_impact
+    union select *, 'wx09' as weather from jfmp_2023_2022fh_2km_fulljfmp_v2_ab8e3737f94c409195e27bfd791ccfeb9.ignition_impact
+    union select *, 'wx10' as weather from jfmp_2023_2022fh_2km_fulljfmp_v2_ab8e3737f94c409195e27bfd791ccfeb10.ignition_impact
+    );
+```
+
+-- revise jfmp xy180 field names !! Note: this won't be required in future !!
+create table jfmp_xy180 as (
+    select cellid,
+        ignitionid_jfmp as ignitionid,
+        gid,
+        name,
+        burnnum,
+        jfmpyearpr as jfmp_year,
+        delwp_dist as delwp_district,
+        op_region as delwp_region
+    from
+        jfmp2022_y1_no_jfmp)
