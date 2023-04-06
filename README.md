@@ -4,116 +4,17 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
 
 ## Spatial data preparation in ArcGIS
 
-### 1. Filter JFMP shapefile to remove non-burn fuel management
-  > Note: previously, we would have filtered to remove CFA burns but the shapefile provided doesn't have an 'agency' field so they're retained here
-
-### 2. Ensure required fields exist and are populated. These fields are:
+### 1. Ensure required fields exist and are populated. These fields are:
  * name        - name of the burn
  * treatment_  - coded id of the burn, including district and type
  * category    - type of burn
+ * T_TYPE_FMS  - type of burn
  * jfmpyrpr    - proposed year/season of treatment (as single 4 digit numeric year)
   > Note: Capitalisation shouldn't matter (but I had better check this!)
-
-### 3. Clip shapefile to latest treatability layer
- > Note: we really should store treatability in Athena and skip this step
-
-### 4. Create a new schema on risk2temp_db
-   Create a new schema to hold the data and results
-   ```sql
-   create schema if not exists jfmp_2023_prioritisation
-   ```
-
-### 5. Convert the JFMP shapefiles to 180m grid data - The slow way
-   1. Import 180m grid cells from risk2temp_db
-
-      ```sql
-      select 
-        cellid, x_coord, y_coord, geom_centroid, delwp_district 
-      from 
-        risk2temp_db.reference_brau.grid_cell_180m
-      where
-        state = 'Victoria'
-      ```
-
-   2. Join JFMP to 180m grid and export to a shapefile
-
-      Select grid cells within JFMP polygons
-      
-      ```arcpy.management.SelectLayerByLocation("180m_grid", "WITHIN", "JFMP_Draft", None, "NEW_SELECTION", "NOT_INVERT")```
-      
-      Use Spatial Join to add the JFMP details to selected grid cells
-      
-      ```arcpy.management.```
-      
-      Export features
-      
-      ```arcpy.management. ```
+  > 
+  > Note: The field for type of burn keeps changing. Pick one and update the WHERE statement in 2.3 below if required.
    
-   3. Import shapefile to risk2temp database
-
-      Upload the shapefile using PostGIS Shapefile Import/Export manager
-      <img src="https://user-images.githubusercontent.com/100050237/227848065-9e6c8ea4-d36b-4bf6-8c80-e75c971c4e9c.png" width="500" />
-      > Note: You can run this tool without installing PostGIS by downloading the latest zip bundle from http://download.osgeo.org/postgis/windows/ and extracting just the /bin/ folder.
-      
-      
-
-### 5. Convert the JFMP shapefiles to 180m grid data - The fast way
-> Note: ensure that these datasets are projected to VicGrid94 prior to carrying out these steps.
-
-> Note: You can run shp2pgsql without installing PostGIS by downloading the latest zip bundle from http://download.osgeo.org/postgis/windows/ and extracting just the /bin/ folder.
-   1. Prepare Spatial SQL versions of the JFMP source datasets using the `shp2pgsql` command. 
-
-      ```bash
-      shp2pgsql -I -s 3111 -g geom FuelTreatmentsPlannedBurns.shp jfmp_2023_prioritisation.jfmp_20200903 > jfmp_20200903.sql
-      shp2pgsql -I -s 3111 -g geom JFMP_select_treatable.shp jfmp_2023_prioritisation.jfmp_treatable_20200903 > jfmp_treatable_20200903.sql
-      ```
-
-   2. Insert the JFMP source datasets into the database (command will prompt for database password once connected; use the password from above):
-      
-      ```bash
-      psql -h riskanalysis2018.cr1xujdl5nau.ap-southeast-2.rds.amazonaws.com -d sourcedata -U brau -p 1352 -f jfmp_20200903.sql
-      psql -h riskanalysis2018.cr1xujdl5nau.ap-southeast-2.rds.amazonaws.com -d sourcedata -U brau -p 1352 -f jfmp_treatable_20200903.sql
-      ```
-      
-   3. Since the datasets have probably been created using ESRI ArcGIS, the geometries have to be checked and probably fixed. Check for geometry problems with:
-
-      ```sql
-      select ST_IsValidReason(geom)
-      from jfmp_2023_prioritisation.jfmp_20200903
-      where not ST_IsValid(geom);
-      ```
-      and
-      ```sql
-      select ST_IsValidReason(geom)
-      from jfmp_2023_prioritisation.jfmp_treatable_20200903
-      where not ST_IsValid(geom);
-      ```
-
-   4. There will probably be a bunch of Self-Intersections or Ring Self-Intersections because ArcGIS has a different definition of valid geometry to PostgreSQL. Fix up geometry problems with:
-
-      ```sql
-      update jfmp_2023_prioritisation.jfmp_20200903
-      set geom = ST_Multi(ST_Buffer(geom, 0.0))
-      where not ST_IsValid(geom);
-
-      update jfmp_2023_prioritisation.jfmp_treatable_20200903
-      set geom = ST_Multi(ST_Buffer(geom, 0.0))
-      where not ST_IsValid(geom);
-      ```
-   5. Join the JFMP shapefile with 180m grid cells 
-      ```sql
-      drop table if exists jfmp_2023_prioritisation.jfmp_treatable_xy180;
-      create table jfmp_2023_prioritisation.jfmp_treatable_xy180 as (
-         select a.cellid,  b.gid, b.name , b.treatment_ as burnnum, b.fop_year, a.delwp_district, c.regionname as op_region , a.geom_polygon
-         from reference_brau.grid_cell_180m as a
-		        inner join jfmp_2023_prioritisation.jfmp_treatable_20200903_grouped as b
-			         on ST_Intersects(a.geom_polygon, b.geom)
-		        left join reference.delwp_districts as c
-			         on a.delwp_district = c.dstrctname
-         );
-      ```
-   
-### 5. Convert the JFMP shapefiles to 180m grid data - The new way
+### 2. Convert the JFMP shapefiles to 180m grid data 
 
    1. Create a new schema in risk2temp_db to hold/store our data
       
@@ -136,7 +37,6 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
               b.name,
               b.treatment_ as burnnum,
               b.JFMPYEARpr as jfmp_year,
-              b.CATEGORY as category,
               a.delwp_district,
               a.delwp_region,
               a.treatable,
@@ -148,12 +48,12 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
           ON 
               ST_Within(a.geom_point, b.geom)
           WHERE 
-              b.T_TYPE_FMS in ('FUEL REDUCTION', ECOLOGICAL)
+              b.T_TYPE_FMS in ('FUEL REDUCTION', ECOLOGICAL) -- or b.category in ('FUEL REDUCTION', ECOLOGICAL)
       ;
       ```
 
  
-### 5. Process Phoenix data in AWS Athena
+### 3. Process Phoenix data in AWS Athena
 
    1. Create a new schema in Athena to hold/store our data
       
@@ -248,10 +148,10 @@ from burn_num_cells a left join ignition_num_cells b on a.ignitionid = b.ignitio
 ```
 
 
-   4. Combine all 10 ignition nojfmp impact tables into a single view
+   4. Combine all 10 nojfmp ignition impact tables into a single view
 
 ```sql
--- combine all 10 ignition nojfmp impact tables into a single view
+-- combine all 10 nojfmp ignition impact tables into a single view
 create view test_jfmp_2022.impact_y1_nojfmp as (
     select *,       'wx01' as weather from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb1.ignition_impact
     union select *, 'wx02' as weather from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb2.ignition_impact
@@ -266,10 +166,10 @@ create view test_jfmp_2022.impact_y1_nojfmp as (
     );
 ```
 
-   4. Combine all 10 ignition fulljfmp impact tables into a single view
+   4. Combine all 10 fulljfmp ignition impact tables into a single view
 
 ```sql
--- combine all 10 ignition fulljfmp impact tables into a single view
+-- combine all 10 fulljfmp ignition impact tables into a single view
 create view test_jfmp_2022.impact_y1_fulljfmp as (
     select *,       'wx01' as weather from jfmp_2023_2022fh_2km_fulljfmp_v2_ab8e3737f94c409195e27bfd791ccfeb1.ignition_impact
     union select *, 'wx02' as weather from jfmp_2023_2022fh_2km_fulljfmp_v2_ab8e3737f94c409195e27bfd791ccfeb2.ignition_impact
@@ -284,15 +184,13 @@ create view test_jfmp_2022.impact_y1_fulljfmp as (
     );
 ```
 
--- revise jfmp xy180 field names !! Note: this won't be required in future !!
-create table jfmp_xy180 as (
-    select cellid,
-        ignitionid_jfmp as ignitionid,
-        gid,
-        name,
-        burnnum,
-        jfmpyearpr as jfmp_year,
-        delwp_dist as delwp_district,
-        op_region as delwp_region
-    from
-        jfmp2022_y1_no_jfmp)
+   4. Calculate the difference in loss values between nojfmp and fulljfmp from ignition_impact tables
+
+create view test_jfmp_2022.ignition_houseloss_phx as (
+    select nojfmp.ignitionid, nojfmp.weather,
+        coalesce(nojfmp.sum_loss_all_int, 0) as nojfmp_tot_calc_loss,
+        coalesce(jfmp.sum_loss_all_int, 0) as jfmp_tot_calc_loss,
+        coalesce(jfmp.sum_loss_all_int, 0) - coalesce(nojfmp.sum_loss_all_int, 0) as loss_diff
+    from impact_y1_nojfmp nojfmp
+    left join impact_y1_fulljfmp jfmp on jfmp.ignitionid = nojfmp.ignitionid and jfmp.weather = nojfmp.weather
+    )
