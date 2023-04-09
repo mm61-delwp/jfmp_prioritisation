@@ -28,7 +28,13 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
       <img src="https://user-images.githubusercontent.com/100050237/227848065-9e6c8ea4-d36b-4bf6-8c80-e75c971c4e9c.png" width="500" />
          > Note: You can run this tool without installing PostGIS by downloading the latest zip bundle from http://download.osgeo.org/postgis/windows/ and extracting just the /bin/ folder.
    
-   3. Join JFMP shapefile to 180m grid cells
+   3. Repair shapefile geometry (because ESRI's idea of valid geometry is different to PostGIS)
+   
+      ```sql
+      UPDATE jfmp_2022_test.jfmp_shapefile SET geom = ST_MakeValid(geom);
+      ```
+   
+   4. Join JFMP shapefile to 180m grid cells
       
       ```sql
       CREATE TABLE jfmp_2022_test.jfmp_xy180 AS
