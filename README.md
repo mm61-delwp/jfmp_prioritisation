@@ -198,7 +198,7 @@ create view test_jfmp_2022.ignition_houseloss_phx as (
     select nojfmp.ignitionid, nojfmp.weather,
         coalesce(nojfmp.sum_loss_all_int, 0) as nojfmp_tot_calc_loss,
         coalesce(jfmp.sum_loss_all_int, 0) as jfmp_tot_calc_loss,
-        coalesce(jfmp.sum_loss_all_int, 0) - coalesce(nojfmp.sum_loss_all_int, 0) as loss_diff
+        coalesce(jfmp.sum_loss_all_int, 0) - coalesce(nojfmp.sum_loss_all_int, 0) as loss_diff -- negative value = reduction in house loss
     from impact_y1_nojfmp nojfmp
     left join impact_y1_fulljfmp jfmp on jfmp.ignitionid = nojfmp.ignitionid and jfmp.weather = nojfmp.weather
     );
@@ -217,8 +217,8 @@ create view test_jfmp_2022.ignition_houseloss_bn as
         coalesce(jfmp.phoenix_houseloss, 0) as jfmp_tot_calc_loss_phx,
         coalesce(nojfmp.houseloss_mean_res, 0) as nojfmp_tot_calc_loss_bn,
         coalesce(jfmp.houseloss_mean_res, 0) as jfmp_tot_calc_loss_bn,
-        coalesce(nojfmp.phoenix_houseloss, 0) - coalesce(jfmp.phoenix_houseloss, 0) as loss_diff_phx,
-        coalesce(jfmp.houseloss_mean_res, 0) - coalesce(nojfmp.houseloss_mean_res, 0) as loss_diff_bn
+        coalesce(jfmp.phoenix_houseloss, 0) - coalesce(nojfmp.phoenix_houseloss, 0) as loss_diff_phx, -- negative value = reduction in house loss
+        coalesce(jfmp.houseloss_mean_res, 0) - coalesce(nojfmp.houseloss_mean_res, 0) as loss_diff_bn -- negative value = reduction in house loss
     from bn_y1_nojfmp nojfmp
     left join bn_y1_fulljfmp jfmp on jfmp.ignition_id = nojfmp.ignition_id 
     );
