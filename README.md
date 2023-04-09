@@ -46,13 +46,14 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
               a.delwp_district,
               a.delwp_region,
               a.treatable,
-              a.geom_polygon
+              a.geom_polygon,
+              a.geom_centroid
           FROM
               reference_brau.grid_cell_180m_treatability as a
           INNER JOIN
               jfmp_2022_test. as b
           ON 
-              ST_Within(a.geom_point, b.geom)
+              ST_Within(a.geom_centroid, b.geom)
           WHERE 
               b.T_TYPE_FMS in ('FUEL REDUCTION', ECOLOGICAL) -- or b.category in ('FUEL REDUCTION', ECOLOGICAL)
       ;
