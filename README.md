@@ -229,7 +229,7 @@ create view test_jfmp_2022.ignition_houseloss_bn as
 ```sql
 create view burn_score_bn as
 with 
-    weighted_burns as (
+    weighted_burns_bn as (
         select 
             ignitionid, name, burnnum, jfmp_year, 
             sum(burn_cells) as burn_cells, 
@@ -243,7 +243,7 @@ with
         select
             b.name, b.burnnum, b.jfmp_year,
             sum(b.burn_weight * coalesce(hl.loss_diff_bn,0)) as burn_score_bn
-        from weighted_burns b
+        from weighted_burns_bn b
         left join ignition_houseloss_bn hl on hl.ignitionid = b.ignitionid
         group by b.name, b.burnnum, b.jfmp_year
     ),
