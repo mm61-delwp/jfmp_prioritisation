@@ -58,7 +58,8 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
               b.T_TYPE_FMS in ('FUEL REDUCTION', ECOLOGICAL) -- or b.category in ('FUEL REDUCTION', ECOLOGICAL)
       ;
       ```
-
+        > Note: The base treatability is a raster layer with 30m pixel resolution. reference_brau.grid_cell_180m_treatability is down-scaled to 180m resolution using a simple binary join. For our purposes this is _mostly_ fine, as the process only cares about the proportion of the planned burn that is treatable. It may slightly over or under-state very small burns, but their small scale will largely offset any inaccuracy.
+        > reference_brau.grid_cell_180m_treatability should not be used for queries where spatial precision is required. 
  
 ### 3. Process Phoenix data in AWS Athena
 
