@@ -74,8 +74,10 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
    3. Calculate year1 burn scores
 
 ```sql
--- summarise the intersections of the JFMP polygons and Phoenix fire areas;
--- allocate burn weighting to each burn based on the number of intersecting treatable cells in the burn divided by the total number of treatable cells in all intersecting burns
+-- summarise the intersections of the JFMP polygons and Phoenix fire areas.
+-- allocate burn weighting to each burn based on the number of intersecting treatable cells in the burn divided by the total number of treatable cells 
+-- in all intersecting burns within the ignition's fire path.
+
 create table test_jfmp_2022.weighted_burns as 
 with 
     jfmp_year as (select 2023 as year1, 2024 as year2, 2025 as year3),
