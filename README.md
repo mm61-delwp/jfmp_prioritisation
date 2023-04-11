@@ -2,7 +2,7 @@
 Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
 
 
-## 
+
 
 ### 1. Prepare spatial data in ArcGIS
    1. Ensure required fields exist and are populated. These fields are:
@@ -322,3 +322,19 @@ create view burn_score_combined as(
     from burn_score_phx a left join burn_score_bn b on a.name = b.name and a.burnnum = b.burnnum and a.jfmp_year = b.jfmp_year
     );
 ```
+   11. Export to risk2temp_db and join to original JFMP shapefile
+
+## Some thoughts and notes
+
+Additional insight and useful prioritisation information could be gained by:
+1. Adding burn_score_phx_ha and burn_score_ha to the final output (divide burn scores by the total burn hectares). 
+   
+   There's currently a bias towards larger burn sizes, which is correct but doesn't enable evaluation of options, e.g. two smaller burns that would produce a larger risk reduction than one larger burn.
+   
+3. Using district average cost/hectare figures to reweight burn scores (risk reduction per dollar). 
+
+   This would identify the most _efficient_ burns.
+   
+6. Weighting priority by district/region residual risk.
+
+   The prioritisation currently works by ranking burns by effect without consideration of whether that effect is required. Parts of the state with highly treatable risk will tend to be prioritised - even if they are below target, over parts of the state which are above target.
