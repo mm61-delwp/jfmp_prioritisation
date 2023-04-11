@@ -73,11 +73,11 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
       ```
       
    2. Export jfmp_xy180 table from risk2temp to Athena database
-      1. Export to jfmp_xy180.csv
-      2. Upload to S3 bucket
-      3. Import to Athena
+      * Export to jfmp_xy180.csv
+      * Upload to S3 bucket
+      * Import to Athena
       ```sql
-      CREATE EXTERNAL TABLE IF NOT EXISTS `test_jfmp_2022`.`jfmp_xy180_v2` (
+      CREATE EXTERNAL TABLE IF NOT EXISTS `test_jfmp_2022`.`jfmp_xy180` (
         `cellid` bigint,
         `name` string,
         `burnnum` string,
