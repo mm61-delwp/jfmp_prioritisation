@@ -177,8 +177,8 @@ with
     a.weather, a.ignitionid, a.name, a.burnnum, a.jfmp_year,
     a.num_burnt as burn_cells,
     b.num_burnt as ignition_cells,
-    a.num_burnt/b.num_burnt as burn_weight
-from burn_num_cells a left join ignition_num_cells b on a.ignitionid = b.ignitionid
+    cast(a.num_burnt as real)/cast(b.num_burnt as real) as burn_weight
+from burn_num_cells a left join ignition_num_cells b on a.ignitionid = b.ignitionid and a.weather = b.weather
 );
 ```
 
