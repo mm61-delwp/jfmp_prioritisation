@@ -2,17 +2,22 @@
 Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
 
 
-## Spatial data preparation in ArcGIS
+## 
 
-### 1. Ensure required fields exist and are populated. These fields are:
- * name        - name of the burn
- * treatment_  - coded id of the burn, including district and type
- * category    - type of burn
- * T_TYPE_FMS  - type of burn
- * jfmpyrpr    - proposed year/season of treatment (as single 4 digit numeric year)
-  > Note: Capitalisation shouldn't matter (but I had better check this!)
-  > 
-  > Note: The field for type of burn keeps changing. Pick one and update the WHERE statement in 2.3 below if required.
+### 1. Prepare spatial data preparation in ArcGIS
+   1. Ensure required fields exist and are populated. These fields are:
+       * name        - name of the burn
+       * treatment_  - coded id of the burn, including district and type
+       * category    - type of burn
+       * T_TYPE_FMS  - type of burn
+       * jfmpyrpr    - proposed year/season of treatment (as single 4 digit numeric year)
+       
+      > Note: Capitalisation shouldn't matter (but I had better check this!)
+      > 
+      > Note: The field for type of burn keeps changing. Pick one and update the WHERE statement in 2.3 below if required.
+  
+   2. Export to new shapefile
+       * Ensure Output Coordinate System is set to GDA 1994 VICGRID94 (3111) 
    
 ### 2. Convert the JFMP shapefiles to 180m grid data 
 
