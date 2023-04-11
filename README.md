@@ -327,7 +327,7 @@ create view burn_score_combined as(
 ## Some thoughts and notes
 
 Additional insight and useful prioritisation information could be gained by:
-1. Adding burn_score_phx_ha and burn_score_ha to the final output (divide burn scores by the total burn hectares). 
+1. Adding burn_score_phx_ha and burn_score_bn_ha to the final output (divide burn scores by the total burn hectares). 
    
    There's currently a bias towards larger burn sizes, which is correct but doesn't enable evaluation of options, e.g. two smaller burns that would produce a larger risk reduction than one larger burn.
    
