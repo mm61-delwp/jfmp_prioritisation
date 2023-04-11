@@ -4,7 +4,7 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
 
 ## 
 
-### 1. Prepare spatial data preparation in ArcGIS
+### 1. Prepare spatial data in ArcGIS
    1. Ensure required fields exist and are populated. These fields are:
        * name        - name of the burn
        * treatment_  - coded id of the burn, including district and type
