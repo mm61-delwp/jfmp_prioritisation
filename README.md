@@ -40,29 +40,27 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
       ```
    
    4. Join JFMP shapefile to 180m grid cells
-      
+    
       ```sql
       CREATE TABLE jfmp_2022_test.jfmp_xy180 AS
-          SELECT
-              a.cellid,
-              b.name,
-              b.treatment_ as burnnum,
-              b.JFMPYEARpr as jfmp_year,
-              a.delwp_district,
-              a.delwp_region,
-              a.treatable,
-              a.geom_polygon,
-              a.geom_centroid
-          FROM
-              reference_brau.grid_cell_180m_treatability as a
-          INNER JOIN
-              jfmp_2022_test. as b
-          ON 
-              ST_Within(a.geom_centroid, b.geom)
-          WHERE 
-              b.T_TYPE_FMS in ('FUEL REDUCTION', ECOLOGICAL) -- or b.category in ('FUEL REDUCTION', ECOLOGICAL)
+         SELECT
+             a.cellid,
+             b.name,
+             b.treatment_ as burnnum,
+             cast(left(b.jfmpyearpr, 4) as bigint) as jfmp_year,
+             a.delwp_district,
+             a.delwp_region,
+             a.treatable
+         FROM
+             reference_brau.grid_cell_180m_treatability a
+         INNER JOIN jfmp_2022_test.jfmp_draft_2022 b
+         ON
+             ST_Contains(b.geom, a.geom_centroid)
+        WHERE
+           a.treatable = 1 AND b.t_type_fms in ('FUEL REDUCTION', 'ECOLOGICAL') -- or b.category in ('FUEL REDUCTION', ECOLOGICAL)
       ;
       ```
+ 
         > Note: The base treatability is a raster layer with 30m pixel resolution. reference_brau.grid_cell_180m_treatability is down-scaled to 180m resolution using a simple binary join. For our purposes this is _mostly_ fine, as the process only cares about the proportion of the planned burn that is treatable. It may slightly over or under-state very small burns, but their small scale will largely offset any inaccuracy.
         > reference_brau.grid_cell_180m_treatability should not be used for queries where spatial precision is required. 
  
