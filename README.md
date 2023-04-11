@@ -73,6 +73,28 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
       ```
       
    2. Export jfmp_xy180 table from risk2temp to Athena database
+      1. Export to jfmp_xy180.csv
+      2. Upload to S3 bucket
+      3. Import to Athena
+      ```sql
+      CREATE EXTERNAL TABLE IF NOT EXISTS `test_jfmp_2022`.`jfmp_xy180_v2` (
+        `cellid` bigint,
+        `name` string,
+        `burnnum` string,
+        `jfmp_year` bigint,
+        `delwp_district` string,
+        `delwp_region` string,
+        `treatable` integer
+      )
+      ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+      WITH SERDEPROPERTIES (
+       'serialization.format' = ',',
+       'field.delim' = ','
+      )
+      LOCATION 's3://tempgippsland/' -- replace with location of jfmp_xy180.csv
+      TBLPROPERTIES ('skip.header.line.count'='1')
+      ;
+      ```
 
    3. Calculate year1 burn scores
 
@@ -95,7 +117,7 @@ with
     allcells_y1_nojfmp_wx09 as (select * from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb9.cell),-- year 1 nojfmp allcells table wx09
     allcells_y1_nojfmp_wx10 as (select * from jfmp_2023_2022fh_2km_nojfmp_v2_70deb0b6f5524cb98570dfdc875189eb10.cell),-- year 1 nojfmp allcells table wx10
 
-    burm_num_cells as (
+    burn_num_cells as (
         select 'wx01' as weather, a.ignitionid, b.name, b.burnnum, b.jfmp_year, count (a.cellid) as num_burnt
         from allcells_y1_nojfmp_wx01 as a inner join jfmp_xy180 as b on a.cellid = b.cellid inner join jfmp_year on b.jfmp_year = jfmp_year.year1
         where coalesce (a.intensity, 0) > 0
@@ -148,7 +170,7 @@ with
     ),
     ignition_num_cells as (
         select weather, ignitionid, sum (num_burnt) as num_burnt
-        from burm_num_cells
+        from burn_num_cells
         group by weather, ignitionid
     )
 (select 
