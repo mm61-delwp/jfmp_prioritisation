@@ -2,7 +2,13 @@
 Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
 
 
+**The Basic logic**
+Each simulated bushfire is run at a future point in time using past fire history only (noJFMP), then at the same point in time with planned burns from the Joint Fuel Management Program included (fullJFMP). All changes in modelled houseloss are attributed back to the planned burns (the burn score) based on the size of the overlap between the planned burn as a proportion of the overlap between all burns and the simulated bushfire. 
+![image](https://user-images.githubusercontent.com/100050237/231652858-b5f8d47a-eeaf-4622-85df-b943d9795bf2.png)
 
+Burn scores are summed for all ignitions to create a final burn score for each planned burn.
+
+# Processing
 
 ### 1. Prepare spatial data in ArcGIS
    1. Ensure required fields exist and are populated. These fields are:
