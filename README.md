@@ -328,7 +328,7 @@ create view burn_score_combined as(
 
 Some ignitions have an increase in house losses in the fulljfmp runs. These are included and distributed among cells and burn units in the same way that reductions in house losses are. The increases are generally outweighed by reductions, but some planned burns still have a negative value. If this isn't considered realistic, we could attribute only the reductions in house loss and ignore any increases.
 
-Additional insight and useful prioritisation information could be gained by:
+Additional insight and prioritisation information could be gained by:
 1. Adding burn_score_phx_ha and burn_score_bn_ha to the final output (divide burn scores by the total burn hectares). 
    
    There's currently a bias towards larger burn sizes, which is correct but doesn't enable evaluation of options, e.g. two smaller burns that would produce a larger risk reduction than one larger burn.
