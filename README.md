@@ -334,9 +334,9 @@ order by burn_score_normalised desc
 
 ```sql
 create view burn_score_combined as(
-    select  a.name, a.burnnum, a.jfmp_year, a.burn_score_raw as score_raw_phx_hl, a.burn_score_normalised as score_norm_phx_hl,
-    b.burn_score_houseloss_raw as score_raw_bn_hl, b.burn_score_houseloss_normalised as score_norm_bn_hl,
-    b.burn_score_firesize_raw as score_raw_bn_fs, b.burn_score_firesize_normalised as score_norm_bn_fs
+    select a.name, a.burnnum, a.jfmp_year, a.burn_score_raw as score_raw_phx_hl, a.burn_score_normalised as score_norm_phx_hl,
+           b.burn_score_houseloss_raw as score_raw_bn_hl, b.burn_score_houseloss_normalised as score_norm_bn_hl,
+           b.burn_score_firesize_raw as score_raw_bn_fs, b.burn_score_firesize_normalised as score_norm_bn_fs
     from burn_score_phx a left join burn_score_bn b on a.name = b.name and a.burnnum = b.burnnum and a.jfmp_year = b.jfmp_year
     );
 ```
