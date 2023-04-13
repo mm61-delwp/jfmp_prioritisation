@@ -66,6 +66,10 @@ Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
  
 ### 3. Process Phoenix data in AWS Athena
 
+**Logic flowchart**
+![image](https://user-images.githubusercontent.com/100050237/231651173-4d20f451-7c46-4f19-9177-1bdefb25324f.png)
+
+
    1. Create a new schema in Athena to hold/store our data
       
       ```sql
