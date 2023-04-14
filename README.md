@@ -268,16 +268,19 @@ create view test_jfmp_2022.ignition_houseloss_bn as
 ```sql
 create view burn_score_bn as
    with 
+       -- burns given burn_weight for contribution to each ignition's fire footprint 
+       -- (reduces original weighted_burns table from weather x ignition to just ignition)
        weighted_burns_bn as (
            select 
                ignitionid, name, burnnum, jfmp_year, 
                sum(burn_cells) as burn_cells, 
                sum(ignition_cells) as ignition_cells,
                cast(sum(burn_cells) as real)/cast(sum(ignition_cells) as real) as burn_weight
-           from weighted_burns_v2
+           from weighted_burns
            group by ignitionid, name, burnnum, jfmp_year
        ),
-    
+       
+       -- calculate burn scores per ignition then sum them back to the burn
        burn_scores as (
            select
                b.name, b.burnnum, b.jfmp_year,
@@ -312,6 +315,7 @@ create view burn_score_bn as
 ```sql
 create view burn_score_phx as
 with 
+    -- calculate burn scores per ignition then sum them back to the burn
     burn_scores as (
         select b.name, b.burnnum, b.jfmp_year,
             sum(b.burn_weight * coalesce(hl.loss_diff,0)) as burn_score_phx
