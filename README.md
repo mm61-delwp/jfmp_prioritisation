@@ -74,7 +74,7 @@ Burn scores are summed for all ignitions to create a final burn score for each p
 ### 3. Process Phoenix data in AWS Athena
 
 **Logic flowchart**
-![image](https://user-images.githubusercontent.com/100050237/231655637-57c8808f-218e-40b9-9d5d-ebede38f9b67.png)
+![image](https://user-images.githubusercontent.com/100050237/231910786-260d955f-42f2-4c50-a695-d9d428f06849.png)
 
 
    1. Create a new schema in Athena to hold/store our data
