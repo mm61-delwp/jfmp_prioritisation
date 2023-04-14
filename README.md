@@ -1,5 +1,5 @@
 # JFMP Burn Prioritisation
-Updating JFMP prioritisation process for new Bushfire Risk Analysis Framework
+Updating JFMP prioritisation process for new Bushfire Risk Modelling Framework
 
 
 **The Basic logic**
