@@ -267,43 +267,44 @@ create view test_jfmp_2022.ignition_houseloss_bn as
     
 ```sql
 create view burn_score_bn as
-with 
-    weighted_burns_bn as (
-        select 
-            ignitionid, name, burnnum, jfmp_year, 
-            sum(burn_cells) as burn_cells, 
-            sum(ignition_cells) as ignition_cells,
-            cast(sum(burn_cells) as real)/cast(sum(ignition_cells) as real) as burn_weight
-        from weighted_burns
-        group by ignitionid, name, burnnum, jfmp_year
-    ),
+   with 
+       weighted_burns_bn as (
+           select 
+               ignitionid, name, burnnum, jfmp_year, 
+               sum(burn_cells) as burn_cells, 
+               sum(ignition_cells) as ignition_cells,
+               cast(sum(burn_cells) as real)/cast(sum(ignition_cells) as real) as burn_weight
+           from weighted_burns_v2
+           group by ignitionid, name, burnnum, jfmp_year
+       ),
     
-    burn_scores as (
-        select
-            b.name, b.burnnum, b.jfmp_year,
-            sum(b.burn_weight * coalesce(hl.ha_diff_bn,0)) as burn_score_firesize,
-            sum(b.burn_weight * coalesce(hl.loss_diff_bn,0)) as burn_score_houseloss
-        from weighted_burns_bn b
-        left join ignition_houseloss_bn hl on hl.ignitionid = b.ignitionid
-        group by b.name, b.burnnum, b.jfmp_year
-    ),
+       burn_scores as (
+           select
+               b.name, b.burnnum, b.jfmp_year,
+               sum(b.burn_weight * coalesce(hl.ha_diff_bn,0)) as burn_score_firesize,
+               sum(b.burn_weight * coalesce(hl.loss_diff_bn,0)) as burn_score_houseloss
+           from weighted_burns_bn b
+           left join ignition_houseloss_bn hl on hl.ignitionid = b.ignitionid
+           group by b.name, b.burnnum, b.jfmp_year
+       ),
     
-    max_score_houseloss as (
-        select min(burn_score_houseloss) as max_score_houseloss from burn_scores -- !! Note: negative is a reduction in house loss !!
-    ),
-    max_score_firesize as (
-        select min(burn_score_firesize) as max_score_firesize from burn_scores -- !! Note: negative is a reduction in house loss !!
-    )
+       max_score_houseloss as (
+           select min(burn_score_houseloss) as max_score_houseloss from burn_scores -- !! Note: negative is a reduction in house loss !!
+       ),
+       
+       max_score_firesize as (
+           select min(burn_score_firesize) as max_score_firesize from burn_scores -- !! Note: negative is a reduction in house loss !!
+       )
 
-(select 
-    b.name, b.burnnum, b.jfmp_year,
-    b.burn_score_firesize as burn_score_firesize_raw,
-    cast(b.burn_score_firesize as real)/cast(m_fs.max_score_firesize as real) as burn_score_firesize_normalised
-    b.burn_score_houseloss as burn_score_houseloss_raw,
-    cast(b.burn_score_houseloss as real)/cast(m_hl.max_score_houseloss as real) as burn_score_houseloss_normalised
-from burn_scores b, max_score_firesize m_fs, max_score_houseloss m_hl 
-order by burn_score_normalised desc
-);
+   (select 
+       b.name, b.burnnum, b.jfmp_year,
+       b.burn_score_firesize as burn_score_firesize_raw,
+       cast(b.burn_score_firesize as real)/cast(m_fs.max_score_firesize as real) as burn_score_firesize_normalised,
+       b.burn_score_houseloss as burn_score_houseloss_raw,
+       cast(b.burn_score_houseloss as real)/cast(m_hl.max_score_houseloss as real) as burn_score_houseloss_normalised
+   from burn_scores b, max_score_firesize m_fs, max_score_houseloss m_hl 
+   order by burn_score_houseloss_normalised desc
+   );
 ```
 
    9. Make Phoenix burn score summary view
@@ -333,10 +334,14 @@ order by burn_score_normalised desc
    10. Combine burn score tables
 
 ```sql
-create view burn_score_combined as(
-    select a.name, a.burnnum, a.jfmp_year, a.burn_score_raw as score_raw_phx_hl, a.burn_score_normalised as score_norm_phx_hl,
-           b.burn_score_houseloss_raw as score_raw_bn_hl, b.burn_score_houseloss_normalised as score_norm_bn_hl,
-           b.burn_score_firesize_raw as score_raw_bn_fs, b.burn_score_firesize_normalised as score_norm_bn_fs
+create or replace view burn_score_combined as(
+    select a.name, a.burnnum, a.jfmp_year, 
+           a.burn_score_raw as score_raw_phx_hl, 
+           a.burn_score_normalised as score_norm_phx_hl,
+           coalesce(b.burn_score_houseloss_raw, 0) as score_raw_bn_hl, 
+           coalesce(b.burn_score_houseloss_normalised, 0) as score_norm_bn_hl,
+           coalesce(b.burn_score_firesize_raw, 0) as score_raw_bn_fs, 
+           coalesce(b.burn_score_firesize_normalised, 0) as score_norm_bn_fs
     from burn_score_phx a left join burn_score_bn b on a.name = b.name and a.burnnum = b.burnnum and a.jfmp_year = b.jfmp_year
     );
 ```
