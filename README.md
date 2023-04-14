@@ -243,7 +243,7 @@ create view test_jfmp_2022.ignition_houseloss_phx as (
     );
 ```
 
-   7. Calculate the difference in loss values between nojfmp and fulljfmp from bayes net tables
+   7. Calculate the difference in loss values between nojfmp and fulljfmp from Bayes net tables
 
 ```sql
 create view test_jfmp_2022.ignition_houseloss_bn as 
@@ -263,13 +263,13 @@ create view test_jfmp_2022.ignition_houseloss_bn as
     );
 ```
 
-   8. Make bayes net burn score summary view
+   8. Make Bayes net burn score summary view
     
 ```sql
 create view burn_score_bn as
    with 
-       -- burns given burn_weight for contribution to each ignition's fire footprint 
-       -- (reduces original weighted_burns table from weather x ignition to just ignition)
+       -- burns weighted for contribution to each ignition's fire footprint 
+       -- (reduces original weighted_burns table from weather x ignition to just ignition because Bayes net has combined them)
        weighted_burns_bn as (
            select 
                ignitionid, name, burnnum, jfmp_year, 
